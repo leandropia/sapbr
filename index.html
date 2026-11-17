@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculadora da Reforma Tributária</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f5f2;
+  --surface: #ffffff;
+  --ink: #1d2421;
+  --muted: #5d6762;
+  --line: #d9ddd8;
+  --accent: #0d6b57;
+  --reform: #b4561b;
+  --accent-soft: #e2efe9;
+  --reform-soft: #f8e9de;
+  --good: #1f7a3a;
+  --bad: #b3261e;
+  --input: #fffdf3;
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131715; --surface: #1b201e; --ink: #e6ebe8; --muted: #9aa49f; --line: #2e3532;
+    --accent: #4fbf9f; --reform: #e8915a; --accent-soft: #1d332c; --reform-soft: #3a2a1f;
+    --good: #6cc98a; --bad: #f08a80; --input: #222826; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131715; --surface: #1b201e; --ink: #e6ebe8; --muted: #9aa49f; --line: #2e3532;
+  --accent: #4fbf9f; --reform: #e8915a; --accent-soft: #1d332c; --reform-soft: #3a2a1f;
+  --good: #6cc98a; --bad: #f08a80; --input: #222826; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font-body); }
+.wrap > * { min-width: 0; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 20px 20px 48px; display: grid; gap: 20px; }
+h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; letter-spacing: .01em; }
+h1 { font-size: 28px; }
+h2 { font-size: 19px; }
+h3 { font-size: 15px; }
+.muted { color: var(--muted); }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+header.top { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; justify-content: space-between; }
+header.top p { margin: 4px 0 0; max-width: 68ch; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: 600 13px var(--font-body); border-radius: 6px; padding: 8px 12px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+button:hover { filter: brightness(1.05); border-color: var(--accent); }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.params { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+.field { display: grid; gap: 4px; }
+.field label { font-size: 12px; font-weight: 600; color: var(--muted); }
+.field input { width: 110px; }
+input, select { font: 14px var(--font-body); color: var(--ink); background: var(--input); border: 1px solid var(--line); border-radius: 5px; padding: 6px 8px; }
+input.n { font-family: var(--font-mono); text-align: right; }
+.params .note { font-size: 12px; color: var(--muted); flex: 1 1 220px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.grid4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.scen { border-top: 4px solid var(--accent); }
+.scen.reform { border-top-color: var(--reform); }
+.scen h2 { margin-bottom: 10px; }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.kv .strong { font-weight: 700; color: var(--ink); font-size: 16px; }
+.impact { display: grid; gap: 4px; }
+.impact .lab { font-size: 12px; color: var(--muted); font-weight: 600; }
+.impact .val { font: 600 20px var(--font-mono); font-variant-numeric: tabular-nums; }
+.pill { justify-self: start; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
+.pill.up { background: color-mix(in srgb, var(--bad) 15%, transparent); color: var(--bad); }
+.pill.down { background: color-mix(in srgb, var(--good) 15%, transparent); color: var(--good); }
+.pill.flat { background: var(--line); color: var(--muted); }
+.verdict { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 12px 16px; border-radius: 8px; background: var(--accent-soft); }
+.verdict.up { background: var(--reform-soft); }
+.verdict strong { font-family: var(--font-display); font-size: 17px; }
+.chart svg { width: 100%; height: auto; display: block; }
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-top: 6px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: 6px; border-bottom: 2px solid var(--line); white-space: nowrap; }
+td { padding: 4px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+td.r, th.r { text-align: right; }
+#detail td:first-child { min-width: 190px; }
+tfoot td { font-weight: 700; border-top: 2px solid var(--line); border-bottom: 0; }
+#editor input { width: 100%; min-width: 70px; padding: 4px 6px; }
+#editor input.desc { min-width: 200px; }
+#editor select { padding: 4px; }
+.lang { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.lang button { border: 0; border-radius: 0; }
+.lang button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.del { padding: 3px 8px; font-size: 12px; color: var(--bad); }
+.tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.pos { color: var(--bad); }
+.neg { color: var(--good); }
+.sechead { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+.model { font-size: 13px; color: var(--muted); }
+.model ul { margin: 6px 0 0; padding-left: 18px; }
+.model a { color: var(--accent); }
+.toast { position: fixed; bottom: 16px; right: 16px; background: var(--ink); color: var(--surface); padding: 10px 14px; border-radius: 6px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.toast.show { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+@media (max-width: 420px) { .wrap { padding: 12px 16px 40px; } h1 { font-size: 23px; } .params { position: static; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1 data-i18n="title">Calculadora da Reforma Tributária</h1>
+      <p class="muted" data-i18n="lead">Simula a apuração de IBS, CBS e Imposto Seletivo lado a lado com ICMS, PIS e COFINS, produto a produto. Lógica baseada no projeto aberto grupomg-tech/calculadora-reforma-tributaria.</p>
+    </div>
+    <div class="btns">
+      <div class="lang" role="group" aria-label="Idioma / Language"><button type="button" data-lang="en">English (US)</button><button type="button" data-lang="pt">Português (BR)</button></div>
+      <button type="button" id="btnDemo" data-i18n="restore">Restaurar exemplo</button>
+      <button type="button" id="btnClear" data-i18n="clear">Limpar produtos</button>
+      <button type="button" id="btnCsv" class="primary" data-i18n="csv">Copiar CSV</button>
+    </div>
+  </header>
+
+  <section class="panel params" aria-label="Alíquotas">
+    <div class="field"><label for="pIbs">IBS (%)</label><input id="pIbs" class="n" inputmode="decimal" value="18,5"></div>
+    <div class="field"><label for="pCbs">CBS (%)</label><input id="pCbs" class="n" inputmode="decimal" value="8,5"></div>
+    <div class="field"><label for="pIs">IS (%)</label><input id="pIs" class="n" inputmode="decimal" value="0"></div>
+    <div class="field"><label for="pMk" data-i18n="markup">Markup de venda</label><input id="pMk" class="n" inputmode="decimal" value="1,32"></div>
+    <p class="note" data-i18n="note">Tudo recalcula enquanto você digita. O markup só sugere o valor de venda dos produtos sem venda informada.</p>
+  </section>
+
+  <section class="grid2" aria-label="Resumo da apuração">
+    <div class="panel scen"><h2 data-i18n="current">Sistema atual</h2><dl class="kv" id="sumAtual"></dl></div>
+    <div class="panel scen reform"><h2 data-i18n="reform">Reforma tributária</h2><dl class="kv" id="sumReforma"></dl></div>
+  </section>
+
+  <div class="verdict" id="verdict"></div>
+
+  <section class="grid4" id="impacts" aria-label="Variações"></section>
+
+  <section class="grid2" aria-label="Entradas e saídas">
+    <div class="panel"><h2 data-i18n="inTitle">Entradas (compras)</h2><p class="muted" style="margin:2px 0 10px" data-i18n="inSub">Créditos aproveitados</p><dl class="kv" id="sumEnt"></dl></div>
+    <div class="panel"><h2 data-i18n="outTitle">Saídas (vendas)</h2><p class="muted" style="margin:2px 0 10px" data-i18n="outSub">Débitos gerados</p><dl class="kv" id="sumSai"></dl></div>
+  </section>
+
+  <section class="grid2" aria-label="Gráficos">
+    <div class="panel chart"><h3 data-i18n="chA">Apuração: atual vs. reforma</h3><div id="chApur"></div><div class="legend"><span><i style="background:var(--accent)"></i><span data-i18n="current">Sistema atual</span></span><span><i style="background:var(--reform)"></i><span data-i18n="reformShort">Reforma</span></span></div></div>
+    <div class="panel chart"><h3 data-i18n="chT">Tributos por espécie nas saídas</h3><div id="chTrib"></div><div class="legend"><span><i style="background:var(--accent)"></i><span data-i18n="current">Sistema atual</span></span><span><i style="background:var(--reform)"></i><span data-i18n="reformShort">Reforma</span></span></div></div>
+  </section>
+
+  <section class="panel" aria-label="Produtos">
+    <div class="sechead">
+      <div><h2 data-i18n="products">Produtos</h2><span class="muted" data-i18n="productsSub">Valores em R$, alíquotas em %. Deixe a venda em branco para usar o markup.</span></div>
+      <button type="button" id="btnAdd" class="primary" data-i18n="add">Adicionar produto</button>
+    </div>
+    <div class="tablewrap">
+      <table id="editor">
+        <thead><tr>
+          <th data-i18n="desc">Descrição</th><th>NCM</th><th class="r" data-i18n="qty">Qtd</th><th class="r" data-i18n="buy">Valor compra</th><th class="r" data-i18n="sell">Valor venda</th>
+          <th class="r">ICMS %</th><th class="r">PIS %</th><th class="r">COFINS %</th><th data-i18n="regime">Regime IBS/CBS</th><th>IS</th><th></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" aria-label="Memória de cálculo">
+    <div class="sechead">
+      <h2 data-i18n="detail">Memória de cálculo por produto</h2>
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" id="tabE" aria-selected="true" data-i18n="tabIn">Entradas</button>
+        <button type="button" role="tab" id="tabS" aria-selected="false" data-i18n="tabOut">Saídas</button>
+      </div>
+    </div>
+    <div class="tablewrap"><table id="detail"></table></div>
+  </section>
+
+  <section class="panel model">
+    <h3 style="color:var(--ink)" data-i18n="howTitle">Como o cálculo é feito</h3>
+    <ul>
+      <li data-i18n="how1">Sistema atual: ICMS, PIS e COFINS por dentro, já incluídos no valor total.</li>
+      <li data-i18n="how2">Reforma: base = valor total − ICMS − PIS − COFINS. IBS e CBS = base × alíquota × fator do regime (padrão 1; redução 30% 0,7; redução 60% 0,4; alíquota zero 0). IS = base × alíquota, só nos itens marcados.</li>
+      <li data-i18n="how3">Créditos das entradas: atual = ICMS+PIS+COFINS; reforma = IBS+CBS (IS não gera crédito). Débitos das saídas: atual = ICMS+PIS+COFINS; reforma = IBS+CBS+IS.</li>
+      <li data-i18n="how4">Carga efetiva: resultado ÷ venda bruta (atual) e resultado ÷ venda total na reforma.</li>
+      <li data-i18n="how5">Modelo simplificado e ilustrativo, sem o cronograma de transição 2026–2033 nem Simples Nacional. Não substitui a calculadora oficial da Receita Federal nem parecer fiscal.</li>
+    </ul>
+    <p data-i18n-html="src">Fonte da lógica: <a href="https://github.com/grupomg-tech/calculadora-reforma-tributaria" rel="noopener">github.com/grupomg-tech/calculadora-reforma-tributaria</a> (licença MIT). Produtos de exemplo são fictícios.</p>
+  </section>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+
+const REGIMES = { "Padrão": 1, "Redução 30%": 0.7, "Redução 60%": 0.4, "Alíquota zero": 0 };
+const round = (v) => Math.sign(v) * Math.round(Number((Math.abs(v) * 100).toPrecision(15))) / 100;
+const sumBy = (arr, k) => round(arr.reduce((t, x) => t + (Number(x[k]) || 0), 0));
+const pctOf = (part, whole) => (whole > 0 ? (part / whole) * 100 : 0);
+
+function calcProduto(it, p, tipo) {
+  const vt = tipo === "saida"
+    ? (it.venda === null || it.venda === undefined || it.venda === "" ? round(it.compra * p.markup) : Number(it.venda))
+    : Number(it.compra);
+  const icms = round(vt * it.icms / 100), pis = round(vt * it.pis / 100), cofins = round(vt * it.cofins / 100);
+  const base = vt - icms - pis - cofins;
+  const fator = REGIMES[it.regime] ?? 1;
+  const ibs = round(base * p.ibs * fator / 100), cbs = round(base * p.cbs * fator / 100);
+  const is = it.seletivo ? round(base * p.is / 100) : 0;
+  const total = round(base + ibs + cbs + is);
+  const atual = round(icms + pis + cofins);
+  const reforma = tipo === "entrada" ? round(ibs + cbs) : round(ibs + cbs + is);
+  return { descricao: it.descricao, ncm: it.ncm, quantidade: it.qtd, valor_total: vt, icms, pis, cofins, base: round(base),
+           ibs, cbs, is, total_reforma: total, dif_total: round(total - vt), atual, reforma };
+}
+
+function calcRelatorio(items, p) {
+  const valid = items.filter((it) => (it.descricao || "").trim() !== "" || Number(it.compra) > 0);
+  const ent = valid.map((it) => calcProduto(it, p, "entrada"));
+  const sai = valid.map((it) => calcProduto(it, p, "saida"));
+  const E = { bruta: sumBy(ent, "valor_total"), atual: sumBy(ent, "atual"), reforma: sumBy(ent, "reforma"), total: sumBy(ent, "total_reforma") };
+  const S = { bruta: sumBy(sai, "valor_total"), atual: sumBy(sai, "atual"), reforma: sumBy(sai, "reforma"), total: sumBy(sai, "total_reforma") };
+  const resA = round(S.atual - E.atual), resR = round(S.reforma - E.reforma);
+  const trib = (arr) => ["icms", "pis", "cofins", "ibs", "cbs", "is"].map((k) => sumBy(arr, k));
+  return {
+    ent, sai, E, S,
+    atual: { debitos: S.atual, creditos: E.atual, resultado: resA, carga: pctOf(resA, S.bruta) },
+    reforma: { debitos: S.reforma, creditos: E.reforma, resultado: resR, carga: pctOf(resR, S.total) },
+    tribEnt: trib(ent), tribSai: trib(sai),
+  };
+}
+
+
+const PIS = 1.65, COF = 7.6;
+const DEMO = [
+  ["Arroz branco tipo 1 5kg", "1006.30.21", 4200, 96600, 7, 0, 0, "Alíquota zero", false],
+  ["Feijão carioca 1kg", "0713.33.19", 6100, 45750, 7, 0, 0, "Alíquota zero", false],
+  ["Óleo de soja 900ml", "1507.90.11", 7400, 51800, 12, PIS, COF, "Redução 60%", false],
+  ["Açúcar cristal 2kg", "1701.99.00", 5300, 39750, 12, PIS, COF, "Redução 60%", false],
+  ["Café torrado e moído 500g", "0901.21.00", 3900, 70200, 12, 0, 0, "Alíquota zero", false],
+  ["Refrigerante cola 2L", "2202.10.00", 9800, 68600, 17, PIS, COF, "Padrão", true],
+  ["Cerveja pilsen lata 350ml", "2203.00.00", 24000, 79200, 17, PIS, COF, "Padrão", true],
+  ["Sabão em pó 1,6kg", "3402.50.00", 2600, 49400, 17, PIS, COF, "Padrão", false],
+  ["Papel higiênico 12 rolos", "4818.10.00", 3100, 52700, 17, PIS, COF, "Redução 60%", false],
+  ["Biscoito recheado 140g", "1905.31.00", 11500, 28750, 17, PIS, COF, "Padrão", false],
+  ["Leite UHT integral 1L", "0401.20.10", 15000, 63000, 7, 0, 0, "Alíquota zero", false],
+  ["Detergente líquido 500ml", "3402.50.00", 8200, 18860, 17, PIS, COF, "Padrão", false],
+].map(([descricao, ncm, qtd, compra, icms, pis, cofins, regime, seletivo]) =>
+  ({ descricao, ncm, qtd, compra, venda: null, icms, pis, cofins, regime, seletivo }));
+
+
+const I18N = {
+  pt: {
+    docTitle: "Calculadora da Reforma Tributária", title: "Calculadora da Reforma Tributária",
+    lead: "Simula a apuração de IBS, CBS e Imposto Seletivo lado a lado com ICMS, PIS e COFINS, produto a produto. Lógica baseada no projeto aberto grupomg-tech/calculadora-reforma-tributaria.",
+    restore: "Restaurar exemplo", clear: "Limpar produtos", csv: "Copiar CSV", markup: "Markup de venda",
+    note: "Tudo recalcula enquanto você digita. O markup só sugere o valor de venda dos produtos sem venda informada.",
+    current: "Sistema atual", reform: "Reforma tributária", reformShort: "Reforma",
+    inTitle: "Entradas (compras)", inSub: "Créditos aproveitados", outTitle: "Saídas (vendas)", outSub: "Débitos gerados",
+    chA: "Apuração: atual vs. reforma", chT: "Tributos por espécie nas saídas",
+    products: "Produtos", productsSub: "Valores em R$, alíquotas em %. Deixe a venda em branco para usar o markup.", add: "Adicionar produto",
+    desc: "Descrição", qty: "Qtd", buy: "Valor compra", sell: "Valor venda", regime: "Regime IBS/CBS", remove: "Remover", seletivo: "Sujeito ao Imposto Seletivo",
+    detail: "Memória de cálculo por produto", tabIn: "Entradas", tabOut: "Saídas",
+    howTitle: "Como o cálculo é feito",
+    how1: "Sistema atual: ICMS, PIS e COFINS por dentro, já incluídos no valor total.",
+    how2: "Reforma: base = valor total − ICMS − PIS − COFINS. IBS e CBS = base × alíquota × fator do regime (padrão 1; redução 30% 0,7; redução 60% 0,4; alíquota zero 0). IS = base × alíquota, só nos itens marcados.",
+    how3: "Créditos das entradas: atual = ICMS+PIS+COFINS; reforma = IBS+CBS (IS não gera crédito). Débitos das saídas: atual = ICMS+PIS+COFINS; reforma = IBS+CBS+IS.",
+    how4: "Carga efetiva: resultado ÷ venda bruta (atual) e resultado ÷ venda total na reforma.",
+    how5: "Modelo simplificado e ilustrativo, sem o cronograma de transição 2026–2033 nem Simples Nacional. Não substitui a calculadora oficial da Receita Federal nem parecer fiscal.",
+    src: 'Fonte da lógica: <a href="https://github.com/grupomg-tech/calculadora-reforma-tributaria" rel="noopener">github.com/grupomg-tech/calculadora-reforma-tributaria</a> (licença MIT). Produtos de exemplo são fictícios. Publicado por <a href="https://sapbr.com" rel="noopener">SAPBR Technologies</a>.',
+    debits: "Débitos", credits: "Créditos", result: "Resultado a recolher", burden: "Carga efetiva",
+    vUp: "A reforma aumenta o imposto a recolher", vDown: "A reforma reduz o imposto a recolher", vFlat: "Resultado neutro", vEmpty: "Cadastre produtos para simular.",
+    vPeriod: "no período", vPp: "p.p. de carga efetiva",
+    iDeb: "Variação de débitos", iCred: "Variação de créditos", iRes: "Variação do resultado", iBurden: "Variação da carga",
+    tUp: "aumenta", tDown: "diminui", tFlat: "sem variação",
+    eBuy: "Compra bruta (atual)", eCred: "Créditos ICMS/PIS/COFINS", eNet: "Compra líquida", cNow: "Carga atual", eTot: "Compra total (reforma)", eCredR: "Créditos IBS/CBS", cRef: "Carga reforma",
+    sSell: "Venda bruta (atual)", sDeb: "Débitos ICMS/PIS/COFINS", sNet: "Venda líquida", sTot: "Venda total (reforma)", sDebR: "Débitos IBS/CBS/IS",
+    cDeb: "Débitos", cCred: "Créditos", cRes: "Resultado",
+    product: "Produto", colVal: "Valor atual", colBase: "Base", colTot: "Total reforma", colDif: "Diferença", now: "atual", ref: "reforma", total: "Total",
+    toastRestore: "Exemplo restaurado", toastClear: "Produtos removidos. Use Adicionar produto.", toastCsv: "CSV copiado. Cole no Excel.", toastCsvErr: "Não foi possível copiar. Verifique a permissão da área de transferência.",
+    regimes: { "Padrão": "Padrão", "Redução 30%": "Redução 30%", "Redução 60%": "Redução 60%", "Alíquota zero": "Alíquota zero" },
+    csvHead: "Tipo;Descrição;NCM;Quantidade;Valor total;ICMS;PIS;COFINS;IBS;CBS;IS;Total reforma;Diferença;Atual (créd/déb);Reforma (créd/déb)",
+    csvIn: "Entrada", csvOut: "Saída", sep: ";",
+  },
+  en: {
+    docTitle: "Brazil Tax Reform Calculator", title: "Brazil Tax Reform Calculator",
+    lead: "Simulates IBS, CBS and the Selective Tax (IS) side by side with today's ICMS, PIS and COFINS, product by product. Logic based on the open-source project grupomg-tech/calculadora-reforma-tributaria.",
+    restore: "Restore example", clear: "Clear products", csv: "Copy CSV", markup: "Sales markup",
+    note: "Everything recalculates as you type. The markup only suggests a sales value for products without one.",
+    current: "Current system", reform: "Tax Reform", reformShort: "Reform",
+    inTitle: "Inbound (purchases)", inSub: "Tax credits taken", outTitle: "Outbound (sales)", outSub: "Tax debits generated",
+    chA: "Tax assessment: current vs. reform", chT: "Taxes on sales by type",
+    products: "Products", productsSub: "Values in BRL (R$), rates in %. Leave the sales value blank to use the markup.", add: "Add product",
+    desc: "Description", qty: "Qty", buy: "Purchase value", sell: "Sales value", regime: "IBS/CBS regime", remove: "Remove", seletivo: "Subject to the Selective Tax",
+    detail: "Calculation detail by product", tabIn: "Inbound", tabOut: "Outbound",
+    howTitle: "How it calculates",
+    how1: "Current system: ICMS, PIS and COFINS are included in the price (calculated \"por dentro\").",
+    how2: "Tax Reform: base = total value − ICMS − PIS − COFINS. IBS and CBS = base × rate × regime factor (standard 1; 30% reduction 0.7; 60% reduction 0.4; zero rate 0). IS = base × rate, only on flagged items.",
+    how3: "Inbound credits: current = ICMS+PIS+COFINS; reform = IBS+CBS (IS is not creditable). Outbound debits: current = ICMS+PIS+COFINS; reform = IBS+CBS+IS.",
+    how4: "Effective burden: net tax ÷ gross sales (current) and net tax ÷ total sales under the reform.",
+    how5: "Simplified, illustrative model. It does not include the 2026–2033 transition schedule or the Simples Nacional regime, and it is not a substitute for the Receita Federal's official calculator or for tax advice.",
+    src: 'Logic source: <a href="https://github.com/grupomg-tech/calculadora-reforma-tributaria" rel="noopener">github.com/grupomg-tech/calculadora-reforma-tributaria</a> (MIT license). Example products are fictional. Published by <a href="https://sapbr.com" rel="noopener">SAPBR Technologies</a>.',
+    debits: "Debits", credits: "Credits", result: "Net tax due", burden: "Effective burden",
+    vUp: "The reform increases the tax due", vDown: "The reform reduces the tax due", vFlat: "Neutral result", vEmpty: "Add products to run the simulation.",
+    vPeriod: "for the period", vPp: "p.p. of effective burden",
+    iDeb: "Change in debits", iCred: "Change in credits", iRes: "Change in net tax", iBurden: "Change in burden",
+    tUp: "increases", tDown: "decreases", tFlat: "no change",
+    eBuy: "Gross purchases (current)", eCred: "ICMS/PIS/COFINS credits", eNet: "Net purchases", cNow: "Current burden", eTot: "Total purchases (reform)", eCredR: "IBS/CBS credits", cRef: "Reform burden",
+    sSell: "Gross sales (current)", sDeb: "ICMS/PIS/COFINS debits", sNet: "Net sales", sTot: "Total sales (reform)", sDebR: "IBS/CBS/IS debits",
+    cDeb: "Debits", cCred: "Credits", cRes: "Net tax",
+    product: "Product", colVal: "Current value", colBase: "Base", colTot: "Reform total", colDif: "Difference", now: "current", ref: "reform", total: "Total",
+    toastRestore: "Example restored", toastClear: "Products cleared. Use Add product.", toastCsv: "CSV copied. Paste it into Excel.", toastCsvErr: "Could not copy. Check the clipboard permission.",
+    regimes: { "Padrão": "Standard", "Redução 30%": "30% reduction", "Redução 60%": "60% reduction", "Alíquota zero": "Zero rate" },
+    csvHead: "Type,Description,NCM,Quantity,Total value,ICMS,PIS,COFINS,IBS,CBS,IS,Reform total,Difference,Current (cred/deb),Reform (cred/deb)",
+    csvIn: "Inbound", csvOut: "Outbound", sep: ",",
+  },
+};
+let lang = "pt";
+try {
+  const q = new URLSearchParams(location.search).get("lang");
+  const stored = localStorage.getItem("calc-reforma-lang");
+  lang = q === "en" || q === "pt" ? q : stored || ((navigator.language || "").toLowerCase().startsWith("pt") ? "pt" : "en");
+} catch (e) { lang = (navigator.language || "").toLowerCase().startsWith("pt") ? "pt" : "en"; }
+if (!I18N[lang]) lang = "pt";
+const T = (k) => I18N[lang][k] ?? I18N.pt[k] ?? k;
+const LOC = () => (lang === "en" ? "en-US" : "pt-BR");
+
+const KEY = "calc-reforma-tributaria-v1";
+let items = JSON.parse(JSON.stringify(DEMO));
+let params = { ibs: 18.5, cbs: 8.5, is: 0, markup: 1.32 };
+let tab = "e";
+try {
+  const saved = JSON.parse(localStorage.getItem(KEY) || "null");
+  if (saved && Array.isArray(saved.items)) { items = saved.items; params = { ...params, ...saved.params }; }
+} catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ items, params })); } catch (e) {} };
+
+const $ = (id) => document.getElementById(id);
+const brl = { format: (n) => new Intl.NumberFormat(LOC(), { style: "currency", currency: "BRL" }).format(n) };
+const dec = (n, d = 2) => new Intl.NumberFormat(LOC(), { minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
+const fmtPct = (n) => dec(n) + "%";
+const parseNum = (s) => {
+  s = String(s ?? "").trim(); if (s === "") return NaN;
+  if (lang === "en") s = s.replace(/,/g, "");
+  else if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+  return parseFloat(s);
+};
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+
+const paramIds = { pIbs: "ibs", pCbs: "cbs", pIs: "is", pMk: "markup" };
+const fmtParam = (k) => dec(params[k], k === "markup" || params[k] % 1 ? 2 : 0);
+const fillParams = () => Object.entries(paramIds).forEach(([id, k]) => { $(id).value = fmtParam(k); });
+Object.entries(paramIds).forEach(([id, k]) => {
+  $(id).addEventListener("input", (e) => {
+    const v = parseNum(e.target.value);
+    if (!isNaN(v) && v >= 0) { params[k] = v; e.target.removeAttribute("aria-invalid"); refresh(); }
+    else e.target.setAttribute("aria-invalid", "true");
+  });
+});
+
+
+function rowHtml(it, i) {
+  const opts = Object.keys(REGIMES).map((r) => `<option value="${r}"${r === it.regime ? " selected" : ""}>${T("regimes")[r]}</option>`).join("");
+  const n = (v) => (v === null || v === undefined || v === "" ? "" : dec(Number(v), Number(v) % 1 ? 2 : 0));
+  return `<tr data-i="${i}">
+    <td><input class="desc" data-k="descricao" value="${esc(it.descricao)}" aria-label="${T("desc")}"></td>
+    <td><input data-k="ncm" value="${esc(it.ncm)}" aria-label="NCM" style="min-width:100px"></td>
+    <td><input class="n" data-k="qtd" inputmode="decimal" value="${n(it.qtd)}" aria-label="${T("qty")}"></td>
+    <td><input class="n" data-k="compra" inputmode="decimal" value="${n(it.compra)}" aria-label="${T("buy")}" style="min-width:110px"></td>
+    <td><input class="n" data-k="venda" inputmode="decimal" value="${n(it.venda)}" aria-label="${T("sell")}" style="min-width:110px"></td>
+    <td><input class="n" data-k="icms" inputmode="decimal" value="${n(it.icms)}" aria-label="ICMS %"></td>
+    <td><input class="n" data-k="pis" inputmode="decimal" value="${n(it.pis)}" aria-label="PIS %"></td>
+    <td><input class="n" data-k="cofins" inputmode="decimal" value="${n(it.cofins)}" aria-label="COFINS %"></td>
+    <td><select data-k="regime" aria-label="${T("regime")}">${opts}</select></td>
+    <td><input type="checkbox" data-k="seletivo" ${it.seletivo ? "checked" : ""} aria-label="${T("seletivo")}"></td>
+    <td><button type="button" class="del">${T("remove")}</button></td>
+  </tr>`;
+}
+function renderEditor() {
+  $("editor").tBodies[0].innerHTML = items.map(rowHtml).join("");
+  updatePlaceholders();
+}
+function updatePlaceholders() {
+  $("editor").querySelectorAll("tbody tr").forEach((tr) => {
+    const it = items[+tr.dataset.i];
+    tr.querySelector('[data-k="venda"]').placeholder = it.compra ? dec(round(it.compra * params.markup)) : "";
+  });
+}
+$("editor").addEventListener("input", (e) => {
+  const tr = e.target.closest("tr"); if (!tr) return;
+  const it = items[+tr.dataset.i], k = e.target.dataset.k;
+  if (k === "descricao" || k === "ncm" || k === "regime") it[k] = e.target.value;
+  else if (k === "seletivo") it[k] = e.target.checked;
+  else {
+    const v = parseNum(e.target.value);
+    if (k === "venda") it.venda = isNaN(v) ? null : v;
+    else it[k] = isNaN(v) ? 0 : v;
+  }
+  if (k === "compra") updatePlaceholders();
+  refresh();
+});
+$("editor").addEventListener("click", (e) => {
+  if (!e.target.classList.contains("del")) return;
+  items.splice(+e.target.closest("tr").dataset.i, 1); renderEditor(); refresh();
+});
+$("btnAdd").addEventListener("click", () => {
+  items.push({ descricao: "", ncm: "", qtd: 0, compra: 0, venda: null, icms: 17, pis: PIS, cofins: COF, regime: "Padrão", seletivo: false });
+  renderEditor(); refresh();
+  const rows = $("editor").tBodies[0].rows; rows[rows.length - 1].querySelector("input").focus();
+});
+$("btnDemo").addEventListener("click", () => {
+  items = JSON.parse(JSON.stringify(DEMO)); params = { ibs: 18.5, cbs: 8.5, is: 0, markup: 1.32 };
+  fillParams(); renderEditor(); refresh(); toast(T("toastRestore"));
+});
+$("btnClear").addEventListener("click", () => { items = []; renderEditor(); refresh(); toast(T("toastClear")); });
+
+
+function kv(el, rows) { el.innerHTML = rows.map(([k, v, s]) => `<dt>${k}</dt><dd class="${s ? "strong" : ""}">${v}</dd>`).join(""); }
+function impact(label, v, isPct) {
+  const cls = Math.abs(v) < 0.005 ? "flat" : v > 0 ? "up" : "down";
+  const txt = isPct ? (v > 0 ? "+" : "") + dec(v) + " p.p." : (v > 0 ? "+" : "") + brl.format(v);
+  const tag = cls === "flat" ? T("tFlat") : cls === "up" ? T("tUp") : T("tDown");
+  return `<div class="panel impact"><span class="lab">${label}</span><span class="val">${txt}</span><span class="pill ${cls}">${tag}</span></div>`;
+}
+function niceMax(v) { if (v <= 0) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))); const n = v / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p; }
+const short = (v) => Math.abs(v) >= 1e6 ? dec(v / 1e6, 1) + (lang === "en" ? "M" : " mi") : Math.abs(v) >= 1e3 ? dec(v / 1e3, 0) + (lang === "en" ? "k" : " mil") : dec(v, 0);
+function bars(el, cats, a, b) {
+  const W = 560, H = 260, L = 64, R = 24, T = 16, B = 30, iw = W - L - R, ih = H - T - B;
+  const max = niceMax(Math.max(...a, ...b, 0)), gw = iw / cats.length, bw = Math.min(28, gw * 0.32);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Gráfico de barras">`;
+  for (let i = 0; i <= 4; i++) {
+    const y = T + ih - (ih * i) / 4;
+    s += `<line x1="${L}" x2="${W - R}" y1="${y}" y2="${y}" stroke="var(--line)" stroke-width="1"/>`;
+    s += `<text x="${L - 6}" y="${y + 4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="var(--font-mono)">${short((max * i) / 4)}</text>`;
+  }
+  cats.forEach((c, i) => {
+    const cx = L + gw * i + gw / 2;
+    [[a[i], "var(--accent)", -bw - 1], [b[i], "var(--reform)", 1]].forEach(([v, col, off]) => {
+      const h = (Math.max(v, 0) / max) * ih;
+      s += `<rect x="${cx + off}" y="${T + ih - h}" width="${bw}" height="${h}" fill="${col}" rx="2"><title>${c}: ${brl.format(v)}</title></rect>`;
+    });
+    s += `<text x="${cx}" y="${H - 10}" text-anchor="middle" font-size="12" fill="var(--ink)">${c}</text>`;
+  });
+  el.innerHTML = s + "</svg>";
+}
+function detail(rep) {
+  const rows = tab === "e" ? rep.ent : rep.sai, lab = tab === "e" ? T("credits") : T("debits");
+  const cols = [["valor_total", T("colVal")], ["icms", "ICMS"], ["pis", "PIS"], ["cofins", "COFINS"], ["base", T("colBase")], ["ibs", "IBS"], ["cbs", "CBS"], ["is", "IS"], ["total_reforma", T("colTot")], ["dif_total", T("colDif")], ["atual", lab + " " + T("now")], ["reforma", lab + " " + T("ref")]];
+  let h = `<thead><tr><th>${T("product")}</th><th>NCM</th>${cols.map(([, t]) => `<th class="r">${t}</th>`).join("")}</tr></thead><tbody>`;
+  rows.forEach((r) => {
+    h += `<tr><td>${esc(r.descricao)}</td><td class="num">${esc(r.ncm)}</td>${cols.map(([k]) => {
+      const v = r[k], c = k === "dif_total" ? (v > 0 ? " pos" : v < 0 ? " neg" : "") : "";
+      return `<td class="r num${c}">${dec(v)}</td>`; }).join("")}</tr>`;
+  });
+  h += `</tbody><tfoot><tr><td colspan="2">${T("total")}</td>${cols.map(([k]) => `<td class="r num">${dec(sumBy(rows, k))}</td>`).join("")}</tr></tfoot>`;
+  $("detail").innerHTML = h;
+}
+let lastRep = null;
+function refresh() {
+  const rep = calcRelatorio(items, params); lastRep = rep;
+  const sc = (o) => [[T("debits"), brl.format(o.debitos)], [T("credits"), brl.format(o.creditos)], [T("result"), brl.format(o.resultado), 1], [T("burden"), fmtPct(o.carga), 1]];
+  kv($("sumAtual"), sc(rep.atual)); kv($("sumReforma"), sc(rep.reforma));
+  const dR = rep.reforma.resultado - rep.atual.resultado;
+  const v = $("verdict"); v.className = "verdict" + (dR > 0.005 ? " up" : "");
+  v.innerHTML = rep.ent.length === 0 ? `<strong>${T("vEmpty")}</strong>` :
+    `<strong>${dR > 0.005 ? T("vUp") : dR < -0.005 ? T("vDown") : T("vFlat")}</strong>
+     <span class="num">${dR > 0 ? "+" : ""}${brl.format(dR)} ${T("vPeriod")} (${dR > 0 ? "+" : ""}${dec(rep.reforma.carga - rep.atual.carga)} ${T("vPp")})</span>`;
+  $("impacts").innerHTML = impact(T("iDeb"), rep.reforma.debitos - rep.atual.debitos) + impact(T("iCred"), rep.reforma.creditos - rep.atual.creditos) +
+    impact(T("iRes"), dR) + impact(T("iBurden"), rep.reforma.carga - rep.atual.carga, true);
+  kv($("sumEnt"), [[T("eBuy"), brl.format(rep.E.bruta)], [T("eCred"), brl.format(rep.E.atual)], [T("eNet"), brl.format(rep.E.bruta - rep.E.atual)], [T("cNow"), fmtPct(pctOf(rep.E.atual, rep.E.bruta)), 1],
+    [T("eTot"), brl.format(rep.E.total)], [T("eCredR"), brl.format(rep.E.reforma)], [T("cRef"), fmtPct(pctOf(rep.E.reforma, rep.E.total)), 1]]);
+  kv($("sumSai"), [[T("sSell"), brl.format(rep.S.bruta)], [T("sDeb"), brl.format(rep.S.atual)], [T("sNet"), brl.format(rep.S.bruta - rep.S.atual)], [T("cNow"), fmtPct(pctOf(rep.S.atual, rep.S.bruta)), 1],
+    [T("sTot"), brl.format(rep.S.total)], [T("sDebR"), brl.format(rep.S.reforma)], [T("cRef"), fmtPct(pctOf(rep.S.reforma, rep.S.total)), 1]]);
+  bars($("chApur"), [T("cDeb"), T("cCred"), T("cRes")], [rep.atual.debitos, rep.atual.creditos, rep.atual.resultado], [rep.reforma.debitos, rep.reforma.creditos, rep.reforma.resultado]);
+  const t = rep.tribSai;
+  bars($("chTrib"), ["ICMS", "PIS", "COFINS", "IBS", "CBS", "IS"], [t[0], t[1], t[2], 0, 0, 0], [0, 0, 0, t[3], t[4], t[5]]);
+  detail(rep); save();
+}
+["tabE", "tabS"].forEach((id) => $(id).addEventListener("click", () => {
+  tab = id === "tabE" ? "e" : "s"; $("tabE").setAttribute("aria-selected", tab === "e"); $("tabS").setAttribute("aria-selected", tab === "s"); detail(lastRep);
+}));
+
+
+function toCsv(rep) {
+  const sep = T("sep");
+  const n = (v) => (lang === "en" ? v.toFixed(2) : dec(v).replace(/\./g, ""));
+  const head = T("csvHead");
+  const line = (t, r) => [t, r.descricao, r.ncm, r.quantidade, n(r.valor_total), n(r.icms), n(r.pis), n(r.cofins), n(r.ibs), n(r.cbs), n(r.is), n(r.total_reforma), n(r.dif_total), n(r.atual), n(r.reforma)]
+    .map((x) => /[;,"\n]/.test(String(x)) ? `"${String(x).replace(/"/g, '""')}"` : x).join(sep);
+  return [head, ...rep.ent.map((r) => line(T("csvIn"), r)), ...rep.sai.map((r) => line(T("csvOut"), r))].join("\n");
+}
+$("btnCsv").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(toCsv(lastRep)); toast(T("toastCsv")); }
+  catch (e) { toast(T("toastCsvErr")); }
+});
+let tt; function toast(m) { const el = $("toast"); el.textContent = m; el.classList.add("show"); clearTimeout(tt); tt = setTimeout(() => el.classList.remove("show"), 2600); }
+
+function applyLang(l) {
+  lang = l;
+  try { localStorage.setItem("calc-reforma-lang", l); } catch (e) {}
+  document.documentElement.lang = l === "en" ? "en" : "pt-BR";
+  document.title = T("docTitle");
+  document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = T(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-html]").forEach((el) => { el.innerHTML = T(el.dataset.i18nHtml); });
+  document.querySelectorAll(".lang button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === l)));
+  try { const u = new URL(location.href); u.searchParams.set("lang", l); history.replaceState(null, "", u); } catch (e) {}
+  fillParams(); renderEditor(); refresh();
+}
+document.querySelectorAll(".lang button").forEach((b) => b.addEventListener("click", () => applyLang(b.dataset.lang)));
+applyLang(lang);
+</script>
+</body>
+</html>
